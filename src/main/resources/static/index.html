@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>류경록 AI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 상단 네비 */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 32px;
+      border-bottom: 1px solid #e5e5e5;
+      background: #fff;
+    }
+
+    .nav-left {
+      font-size: 0.85rem;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .portfolio-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid #ddd;
+      color: #555;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .portfolio-btn:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+
+    .portfolio-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .help-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #888;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: border-color 0.2s, color 0.2s;
+      z-index: 50;
+    }
+
+    .help-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+    /* 메인 콘텐츠 */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px 80px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .hero-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+      color: #1a1a1a;
+    }
+
+    .hero-subtitle {
+      font-size: 1rem;
+      color: #2563eb;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .hero-desc {
+      font-size: 0.88rem;
+      color: #666;
+      max-width: 480px;
+      line-height: 1.65;
+    }
+
+    /* 검색 영역 */
+    .search-wrap {
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .input {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #1a1a1a;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input:focus { border-color: #2563eb; }
+    .input::placeholder { color: #bbb; }
+
+    .send-btn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .send-btn:hover:not(:disabled) { background: #1d4ed8; }
+    .send-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .input-hint {
+      font-size: 0.78rem;
+      color: #aaa;
+      text-align: center;
+    }
+
+    /* 응답 박스 */
+    .response-box {
+      margin-top: 20px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 20px 22px;
+      line-height: 1.8;
+      font-size: 0.93rem;
+      white-space: pre-wrap;
+      color: #1a1a1a;
+    }
+
+    .typing { color: #bbb; font-style: italic; }
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 0.9em;
+      background: #2563eb;
+      margin-left: 1px;
+      vertical-align: text-bottom;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* 참고 출처 */
+    .sources-box {
+      margin-top: 12px;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .sources-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      color: #666;
+      cursor: pointer;
+      user-select: none;
+      background: #fafafa;
+      transition: background 0.15s;
+    }
+
+    .sources-header:hover { background: #f0f0f0; }
+
+    .sources-toggle {
+      margin-left: auto;
+      font-size: 0.7rem;
+      color: #aaa;
+      transition: transform 0.2s;
+    }
+
+    .sources-toggle.open { transform: rotate(180deg); }
+
+    .sources-list {
+      display: none;
+      padding: 12px 16px;
+      background: #fafafa;
+      border-top: 1px solid #e5e5e5;
+    }
+
+    .sources-list.open { display: block; }
+
+    .source-item {
+      display: flex;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #efefef;
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.55;
+    }
+
+    .source-item:last-child { border-bottom: none; }
+
+    .source-num {
+      flex-shrink: 0;
+      color: #aaa;
+      font-size: 0.75rem;
+      margin-top: 1px;
+    }
+
+    /* 추천 질문 */
+    .suggestions-label {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin: 32px 0 12px;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .suggestion-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 6px 0;
+      border-bottom: 1px solid #ebebeb;
+      transition: border-color 0.15s;
+    }
+
+    .suggestion-row:hover { border-color: #2563eb; }
+
+    .suggestion-arrow {
+      color: #ccc;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .suggestion-text {
+      font-size: 0.88rem;
+      color: #666;
+      transition: color 0.15s;
+    }
+
+    .suggestion-row:hover .suggestion-text { color: #2563eb; }
+    .suggestion-row:hover .suggestion-arrow { color: #2563eb; }
+
+    /* 모달 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 14px;
+      padding: 28px 32px;
+      max-width: 420px;
+      width: 90%;
+      color: #1a1a1a;
+    }
+
+    .modal h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .modal p {
+      font-size: 0.87rem;
+      color: #666;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .modal-close {
+      margin-top: 20px;
+      width: 100%;
+      background: #f5f5f5;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      color: #555;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+
+    .modal-close:hover { background: #ebebeb; }
+  </style>
+</head>
+<body>
+
+  <!-- 네비게이션 -->
+  <nav class="nav">
+    <span class="nav-left">Portfolio AI</span>
+    <div class="nav-right">
+      <a class="portfolio-btn" href="https://pauly00.github.io/portfolio/" target="_blank">포트폴리오 보기</a>
+    </div>
+  </nav>
+
+  <!-- 메인 -->
+  <main class="main">
+    <div class="hero">
+      <div class="hero-title">👋 Welcome to 류경록's AI</div>
+      <div class="hero-subtitle">💬 궁금한 것을 자유롭게 질문해보세요</div>
+      <div class="hero-desc">
+        기술 스택부터 프로젝트 경험까지, AI가 포트폴리오를 바탕으로 답변합니다.
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <form class="form" onsubmit="sendMessage(event)">
+        <input class="input" id="input" type="text"
+          placeholder="예: 어떤 프로젝트를 진행했나요?"
+          autocomplete="off" />
+        <button class="send-btn" id="btn" type="submit">전송</button>
+      </form>
+      <div class="input-hint">답변은 부정확할 수 있습니다</div>
+
+      <div id="response" class="response-box" style="display:none"></div>
+      <div id="sources" class="sources-box" style="display:none">
+        <div class="sources-header" onclick="toggleSources()">
+          <span>📎 참고한 내용</span>
+          <span class="sources-toggle" id="sourcesToggle">▼</span>
+        </div>
+        <div class="sources-list" id="sourcesList"></div>
+      </div>
+
+      <div id="suggestionsWrap">
+        <div class="suggestions-label">질문 예시</div>
+        <div class="suggestions">
+          <div class="suggestion-row" onclick="fillInput('취득한 자격증을 알려주세요')">
+            <span class="suggestion-arrow">→</span>
+            <span class="suggestion-text">취득한 자격증을 알려주세요</span>
+          </div>
+          <div class="suggestion-row" onclick="fillInput('주요 기술 스택이 뭔가요?')">
+            <span class="suggestion-arrow">→</span>
+            <span class="suggestion-text">주요 기술 스택이 뭔가요?</span>
+          </div>
+          <div class="suggestion-row" onclick="fillInput('인턴 경험이 있나요?')">
+            <span class="suggestion-arrow">→</span>
+            <span class="suggestion-text">인턴 경험이 있나요?</span>
+          </div>
+          <div class="suggestion-row" onclick="fillInput('대표 프로젝트를 소개해주세요')">
+            <span class="suggestion-arrow">→</span>
+            <span class="suggestion-text">대표 프로젝트를 소개해주세요</span>
+          </div>
+          <div class="suggestion-row" onclick="fillInput('수상 경력이 있나요?')">
+            <span class="suggestion-arrow">→</span>
+            <span class="suggestion-text">수상 경력이 있나요?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 하단 고정 도움말 버튼 -->
+  <button class="help-btn" onclick="document.getElementById('helpModal').classList.add('open')">?</button>
+
+  <!-- 사용법 모달 -->
+  <div class="modal-overlay" id="helpModal" onclick="closeModal(event)">
+    <div class="modal">
+      <h3>💡 사용법</h3>
+      <p>류경록의 포트폴리오 정보를 학습한 AI입니다.<br/>궁금한 것을 자유롭게 질문해보세요.</p>
+      <p><strong style="color:#ccc">질문 예시</strong><br/>
+        · 어떤 프로젝트를 진행했나요?<br/>
+        · 사용해본 기술 스택은 무엇인가요?<br/>
+        · 협업 경험이 있나요?
+      </p>
+      <p>⚠️ AI 특성상 부정확한 답변이 있을 수 있습니다.<br/>정확한 정보는 포트폴리오를 직접 확인해주세요.</p>
+      <button class="modal-close" onclick="document.getElementById('helpModal').classList.remove('open')">닫기</button>
+    </div>
+  </div>
+
+  <script>
+    let abortController = null;
+
+    function fillInput(text) {
+      document.getElementById('input').value = text;
+      document.getElementById('input').focus();
+    }
+
+    function closeModal(e) {
+      if (e.target === document.getElementById('helpModal')) {
+        document.getElementById('helpModal').classList.remove('open');
+      }
+    }
+
+    function toggleSources() {
+      const list = document.getElementById('sourcesList');
+      const toggle = document.getElementById('sourcesToggle');
+      list.classList.toggle('open');
+      toggle.classList.toggle('open');
+    }
+
+    function renderSources(json) {
+      const sourcesBox = document.getElementById('sources');
+      const sourcesList = document.getElementById('sourcesList');
+      try {
+        const sources = JSON.parse(json);
+        if (!sources.length) return;
+        sourcesList.innerHTML = sources.map((s, i) =>
+          `<div class="source-item">
+            <span class="source-num">${i + 1}</span>
+            <span>${s.excerpt}</span>
+          </div>`
+        ).join('');
+        sourcesBox.style.display = 'block';
+      } catch (e) { /* 무시 */ }
+    }
+
+    async function sendMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('input');
+      const btn = document.getElementById('btn');
+      const responseBox = document.getElementById('response');
+      const sourcesBox = document.getElementById('sources');
+      const sourcesList = document.getElementById('sourcesList');
+      const suggestionsWrap = document.getElementById('suggestionsWrap');
+      const message = input.value.trim();
+      if (!message) return;
+
+      if (abortController) abortController.abort();
+      abortController = new AbortController();
+
+      btn.disabled = true;
+      btn.textContent = '...';
+      suggestionsWrap.style.display = 'none';
+      responseBox.style.display = 'block';
+      responseBox.innerHTML = '<span class="typing">답변 생성 중...</span>';
+      sourcesBox.style.display = 'none';
+      sourcesList.innerHTML = '';
+      document.getElementById('sourcesList').classList.remove('open');
+      document.getElementById('sourcesToggle').classList.remove('open');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+          body: JSON.stringify({ message }),
+          signal: abortController.signal,
+        });
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let text = '';
+        let currentEvent = 'message';
+        let buffer = '';
+        responseBox.innerHTML = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // 마지막 불완전한 줄은 버퍼에 유지
+
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              currentEvent = line.slice(6).trim();
+            } else if (line.startsWith('data:')) {
+              const data = line.slice(5);
+              if (currentEvent === 'message' && data.trim()) {
+                text += data;
+                responseBox.innerHTML = text + '<span class="cursor"></span>';
+              } else if (currentEvent === 'sources' && data.trim()) {
+                renderSources(data.trim());
+              }
+            } else if (line === '') {
+              currentEvent = 'message'; // 빈 줄 = 이벤트 구분자, 리셋
+            }
+          }
+        }
+
+        responseBox.innerHTML = text;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          responseBox.textContent = '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '전송';
+        suggestionsWrap.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

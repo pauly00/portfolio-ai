@@ -1,0 +1,12 @@
+.gradle/
+build/
+.idea/
+*.iml
+out/
+.env
+application-local.yml
+application-secret.yml
+
+# 개인 포트폴리오 데이터 (민감 정보)
+src/main/resources/data/portfolio.md
+/.claude

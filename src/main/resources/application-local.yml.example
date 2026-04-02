@@ -1,0 +1,12 @@
+# 로컬 개발 환경 설정 예시
+# 이 파일을 application-local.yml로 복사하여 사용하세요 (.gitignore에 포함됨)
+
+spring:
+  ai:
+    openai:
+      api-key: sk-proj-your-actual-key-here
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/portfolio_ai
+    username: postgres
+    password: postgres
