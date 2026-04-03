@@ -119,6 +119,23 @@ data: Spring Boot와 Java를 주로 사용합니다...
 
 ---
 
+## Qdrant
+
+| 항목 | URL |
+|------|-----|
+| 대시보드 | `http://localhost:6333/dashboard` |
+| portfolio 컬렉션 | `http://localhost:6333/dashboard#/collections/portfolio` |
+
+컬렉션을 초기화하려면 대시보드에서 삭제하거나:
+
+```bash
+curl -X DELETE http://localhost:6333/collections/portfolio
+```
+
+삭제 후 앱을 재시작하면 `PortfolioDataLoader`가 자동으로 재인덱싱합니다.
+
+---
+
 ## 포트폴리오 데이터 수정
 
 `src/main/resources/data/portfolio.md` 수정 후 앱을 재시작하면 자동 반영됩니다.
