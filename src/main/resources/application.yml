@@ -13,6 +13,12 @@ spring:
         options:
           model: text-embedding-3-small
 
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: portfolio
+        initialize-schema: true
 
 server:
   port: 8080

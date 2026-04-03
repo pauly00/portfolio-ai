@@ -1,6 +1,5 @@
 package com.example.portfolioai.service;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -8,15 +7,20 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,8 +28,7 @@ import java.util.List;
 public class PortfolioChatService {
 
     private final OpenAiChatModel chatModel;
-
-    private String portfolioContext;
+    private final VectorStore vectorStore;
 
     private static final String SYSTEM_PROMPT_TEMPLATE = """
             당신은 류경록의 포트폴리오 AI 어시스턴트입니다.
@@ -48,21 +51,28 @@ public class PortfolioChatService {
             %s
             """;
 
-    @PostConstruct
-    public void loadPortfolioData() {
-        try {
-            ClassPathResource resource = new ClassPathResource("data/portfolio.md");
-            portfolioContext = resource.getContentAsString(StandardCharsets.UTF_8);
-            log.info("포트폴리오 데이터 로드 완료");
-        } catch (IOException e) {
-            log.error("포트폴리오 데이터 로드 실패", e);
-            portfolioContext = "";
-        }
+    public Flux<ServerSentEvent<String>> streamChat(String userMessage) {
+        // VectorStore.similaritySearch()는 내부적으로 blocking HTTP 호출을 사용하므로
+        // Netty 이벤트 루프 스레드에서 직접 호출 불가 → boundedElastic 스레드로 오프로드
+        return Mono.fromCallable(() ->
+                        vectorStore.similaritySearch(
+                                SearchRequest.builder().query(userMessage).topK(3).build()
+                        )
+                )
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMapMany(relevantDocs -> buildChatStream(userMessage, relevantDocs))
+                .doOnError(e -> log.error("스트리밍 오류: {}", e.getMessage()));
     }
 
-    public Flux<ServerSentEvent<String>> streamChat(String userMessage) {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"));
-        String systemPrompt = SYSTEM_PROMPT_TEMPLATE.formatted(today, portfolioContext);
+    private Flux<ServerSentEvent<String>> buildChatStream(String userMessage, List<Document> relevantDocs) {
+        String context = relevantDocs.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n---\n\n"));
+
+        log.debug("검색된 청크 수: {}", relevantDocs.size());
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"));
+        String systemPrompt = SYSTEM_PROMPT_TEMPLATE.formatted(today, context);
 
         Prompt prompt = new Prompt(
                 List.of(new SystemMessage(systemPrompt), new UserMessage(userMessage)),
@@ -79,7 +89,6 @@ public class PortfolioChatService {
                 .map(token -> ServerSentEvent.<String>builder()
                         .event("message")
                         .data(token)
-                        .build())
-                .doOnError(e -> log.error("스트리밍 오류: {}", e.getMessage()));
+                        .build());
     }
 }

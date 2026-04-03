@@ -29,6 +29,12 @@ dependencies {
     // Spring AI - OpenAI
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
 
+    // Spring AI - Qdrant Vector Store
+    implementation 'org.springframework.ai:spring-ai-qdrant-store-spring-boot-starter'
+
+    // HTML 파싱 (포트폴리오 사이트 스크래핑)
+    implementation 'org.jsoup:jsoup:1.17.2'
+
 // Swagger (WebFlux용)
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0'
 
